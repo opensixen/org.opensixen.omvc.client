@@ -4,7 +4,9 @@ import org.compiere.model.MSysConfig;
 import org.compiere.util.CLogger;
 import org.eclipse.riena.communication.core.factory.Register;
 import org.opensixen.dev.omvc.interfaces.IRevisionDownloader;
+import org.opensixen.dev.omvc.interfaces.IRevisionUploader;
 import org.opensixen.dev.omvc.interfaces.IRienaService;
+import org.opensixen.dev.omvc.model.RienaTools;
 import org.opensixen.dev.omvc.model.ServiceRegistrationException;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -50,10 +52,9 @@ public class Activator implements BundleActivator {
 			return;
 		}		
 		String server = MSysConfig.getValue("DICTIONARY_ID_WEBSITE");
-		if (server.endsWith("/"))	{
-			server = server.substring(0, server.lastIndexOf('/'));
-		}
-		String url = server + IRevisionDownloader.path;
+		
+		// Registramos el Centralized ID Generator
+		String url = RienaTools.getURL(server , IRevisionDownloader.path);
 		downloader = register(IRevisionDownloader.class, url);
 		registered = true;
 	}

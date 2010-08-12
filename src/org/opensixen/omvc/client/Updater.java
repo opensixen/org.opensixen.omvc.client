@@ -20,19 +20,7 @@ public class Updater {
 		downloader = Activator.getDownloader();
 	}
 	
-	public boolean update()	{
-		
-		MRevision revi = new MRevision(Env.getCtx(), 0, null);
-		revi.setProject_ID(1);
-		revi.setName("Opensixen");
-		revi.setDescription("Proyecto Opensixen");
-		revi.setRevision(0);
-		revi.setIsAudited(true);
-		revi.save();
-		
-		if (true)	{
-			return true;
-		}
+	public boolean update()	{	
 		
 		SQLEngine engine = new SQLEngine();
 		

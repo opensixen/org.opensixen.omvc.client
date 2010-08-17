@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
+import org.compiere.util.Ini;
 import org.opensixen.dev.omvc.interfaces.IRevisionDownloader;
 import org.opensixen.dev.omvc.model.Revision;
 import org.opensixen.dev.omvc.model.Script;
@@ -21,6 +22,14 @@ public class Updater {
 	}
 	
 	public boolean update()	{	
+		
+		// Guardamos el estado de migrationScriptState y lo cambiamos a false
+		// para que no guarde las actualizaciones en el migration script.
+		
+		boolean migrationScriptState = Ini.isPropertyBool(Ini.P_LOGMIGRATIONSCRIPT);
+		if (migrationScriptState)	{
+			Ini.setProperty(Ini.P_LOGMIGRATIONSCRIPT, false);
+		}
 		
 		SQLEngine engine = new SQLEngine();
 		
@@ -41,6 +50,9 @@ public class Updater {
 				}				
 			}
 		}
+		
+		// volvemos a poner logmigrationscript a su valor original;
+		Ini.setProperty(Ini.P_LOGMIGRATIONSCRIPT, migrationScriptState);
 		return true;
 	}
 	

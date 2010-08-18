@@ -2,6 +2,8 @@ package org.opensixen.omvc.client.model;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -9,7 +11,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.compiere.db.PreparedStatementProxy;
 import org.compiere.util.CLogger;
+import org.compiere.util.CPreparedStatement;
+import org.compiere.util.CStatementVO;
 import org.compiere.util.DB;
 import org.compiere.util.Trx;
 import org.opensixen.dev.omvc.model.Script;
@@ -29,7 +34,7 @@ public class SQLEngine implements IEngine{
 		String trxName = Trx.createTrxName();
 		log.info("Running script_ID: " + script.getScript_ID());
 		for (String sql:querys)	{
-			if (DB.executeUpdate(sql, trxName) == -1)	{
+			if (executeUpdate(sql, trxName) == -1)	{
 				try { 
 					DB.rollback(true, trxName);
 				} catch (SQLException e) {
@@ -48,6 +53,36 @@ public class SQLEngine implements IEngine{
 		
 		
 	}
+	
+	private int executeUpdate(String sql, String trxName)	{
+		
+		CPreparedStatement psmt = newCPreparedStatement(sql, trxName);
+		try {
+			return psmt.executeUpdate();
+		}
+		catch (SQLException e) {	
+			e.printStackTrace();
+			return -1;
+		}				
+	}
+	
+	
+	/**
+	 * Nos proporciona un CPrepareStatement sin pasar por el conversor
+	 * @param resultSetType
+	 * @param resultSetConcurrency
+	 * @param sql
+	 * @param trxName
+	 * @return CPreparedStatement proxy
+	 */
+	public static CPreparedStatement newCPreparedStatement(String sql, String trxName) {
+		
+		CStatementVO statement = new CStatementVO(ResultSet.TYPE_FORWARD_ONLY,	ResultSet.CONCUR_UPDATABLE, sql);
+		
+		return (CPreparedStatement)Proxy.newProxyInstance(CPreparedStatement.class.getClassLoader(), 
+				new Class[]{CPreparedStatement.class},	new PreparedStatementProxy(statement));
+	}
+	
 
 	@Override
 	public Object getResult() {
@@ -94,7 +129,8 @@ public class SQLEngine implements IEngine{
 				if (query.endsWith(";"))	{
 					query = query.substring(0, query.lastIndexOf(";")).trim();
 				}
-				
+				// Limpiamos caracteres extraños
+				query = query.replaceAll("\n", "");
 				queryes.add(query);
 							
 			}

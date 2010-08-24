@@ -58,7 +58,10 @@ public class SQLEngine implements IEngine{
 		
 		CPreparedStatement psmt = newCPreparedStatement(sql, trxName);
 		try {
-			return psmt.executeUpdate();
+			int num = psmt.executeUpdate();
+			psmt.close();
+			psmt = null;
+			return num;
 		}
 		catch (SQLException e) {	
 			e.printStackTrace();
@@ -150,6 +153,10 @@ public class SQLEngine implements IEngine{
 	
 	private String getScriptXML(String script)	{
 		StringBuffer buff = new StringBuffer("<scriptCollection>");		
+		
+		script = script.replaceAll("<script>", "<script><![CDATA[");
+		script = script.replaceAll("</script>", "]]></script>");
+		
 		buff.append(script.replaceAll("--##", ""));
 		buff.append("</scriptCollection>");						
 		return buff.toString();

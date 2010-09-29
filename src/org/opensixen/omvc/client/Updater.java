@@ -5,20 +5,20 @@ import java.util.List;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
-import org.opensixen.dev.omvc.interfaces.IRevisionDownloader;
 import org.opensixen.dev.omvc.model.Revision;
 import org.opensixen.dev.omvc.model.Script;
 import org.opensixen.model.MRevision;
 import org.opensixen.model.POFactory;
 import org.opensixen.omvc.client.model.SQLEngine;
+import org.opensixen.omvc.client.proxy.RevisionDownloaderProxy;
 
 public class Updater {
 
 	private CLogger log = CLogger.getCLogger(getClass());
-	private IRevisionDownloader downloader;
+	private RevisionDownloaderProxy downloader;
 
 	public Updater()	{
-		downloader = Activator.getDownloader();
+		downloader = RevisionDownloaderProxy.getInstance();
 	}
 	
 	public boolean update()	{	

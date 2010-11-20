@@ -3,14 +3,17 @@
  */
 package org.opensixen.omvc.client.proxy;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.opensixen.dev.omvc.interfaces.IPO;
 import org.opensixen.dev.omvc.interfaces.IRemoteConsole;
 import org.opensixen.dev.omvc.model.Project;
 import org.opensixen.dev.omvc.model.Revision;
 import org.opensixen.dev.omvc.model.Script;
+import org.opensixen.omvc.client.Activator;
 import org.opensixen.riena.client.proxy.AbstractProxy;
 
 /**
@@ -25,6 +28,11 @@ public class RemoteConsoleProxy extends AbstractProxy<IRemoteConsole> {
 	private static IRemoteConsole console;
 	
 	private static RemoteConsoleProxy instance;
+	
+	/* stuff for the login configuration */
+	private static final String JAAS_CONFIG_FILE = "data/jaas_config.txt"; //$NON-NLS-1$
+	private static final String CONFIG_PREF = "loginConfiguration"; //$NON-NLS-1$
+	private static final String CONFIG_DEFAULT = "omvc"; //$NON-NLS-1$
 	
 	
 	
@@ -53,6 +61,35 @@ public class RemoteConsoleProxy extends AbstractProxy<IRemoteConsole> {
 		return IRemoteConsole.path;
 	}	
 		
+	
+
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.client.proxy.AbstractProxy#needAuth()
+	 */
+	@Override
+	public boolean needAuth() {
+		// TODO Auto-generated method stub
+		return true;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.client.proxy.AbstractProxy#getJAASConfigurationName()
+	 */
+	@Override
+	public String getJAASConfigurationName() {
+		// TODO Auto-generated method stub
+		return new DefaultScope().getNode(Activator.PLUGIN_ID).get(CONFIG_PREF, CONFIG_DEFAULT);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.client.proxy.AbstractProxy#getJAASConfigFile()
+	 */
+	@Override
+	public URL getJAASConfigFile() {
+		// TODO Auto-generated method stub
+		return Activator.getContext().getBundle().getEntry(JAAS_CONFIG_FILE);
+	}
 
 	/**
 	 * @return

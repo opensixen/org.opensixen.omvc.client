@@ -1,6 +1,7 @@
 package org.opensixen.model;
 
 import java.sql.ResultSet;
+import java.util.List;
 import java.util.Properties;
 
 public class MRevision extends X_AD_OMRevision {
@@ -15,4 +16,9 @@ public class MRevision extends X_AD_OMRevision {
 		// TODO Auto-generated constructor stub
 	}
 
+	
+	public static List<MRevision> getRevisions(Properties ctx)	{
+		return POFactory.getList(ctx, MRevision.class);
+	}
+	
 }

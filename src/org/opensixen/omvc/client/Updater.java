@@ -1,5 +1,6 @@
 package org.opensixen.omvc.client;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.compiere.util.CLogger;
@@ -17,11 +18,17 @@ public class Updater {
 	private CLogger log = CLogger.getCLogger(getClass());
 	private RevisionDownloaderProxy downloader;
 
+	
 	public Updater()	{
-		downloader = RevisionDownloaderProxy.getInstance();
+		downloader = RevisionDownloaderProxy.getInstance();		
 	}
 	
+	
 	public boolean update()	{	
+		return update(getPendingUpdates());
+	}
+	
+	public boolean update(List<ProjectUpdates> updates)	{
 		
 		// Guardamos el estado de migrationScriptState y lo cambiamos a false
 		// para que no guarde las actualizaciones en el migration script.
@@ -33,20 +40,31 @@ public class Updater {
 		
 		SQLEngine engine = new SQLEngine();
 		
-		List<MRevision> projects = POFactory.getList(Env.getCtx(), MRevision.class);
 		
-		for (MRevision r:projects)	{		
-			List<Revision> revisions =  downloader.getRevisions(r.getProject_ID(),r.getRevision());			
+		
+		for (ProjectUpdates update : updates)	{		
+			// If update is not selected, continue
+			if (!update.isSelected())	{
+				continue;
+			}
+			
+			List<Revision> revisions =  update.getRevisions();
+			MRevision project = update.getProject();
+			
 			for (Revision rev:revisions)	{				
 				log.info("Running revision_ID " + rev.getRevision_ID() + ": " + rev.getDescription());
+				
+				// Get scripts from server
 				List<Script> scripts = downloader.getScripts(rev, engine.getAvailableEngines());
 				for (Script script: scripts)	{
+					
+					// Try to run engine
 					if (!engine.run(script))	{
 						return false;
 					}
 					// Actualizamos el proyecto a la revision descargada.
-					r.setRevision(rev.getRevision_ID());
-					r.save();
+					project.setRevision(rev.getRevision_ID());
+					project.save();
 				}				
 			}
 		}
@@ -54,6 +72,32 @@ public class Updater {
 		// volvemos a poner logmigrationscript a su valor original;
 		Ini.setProperty(Ini.P_LOGMIGRATIONSCRIPT, migrationScriptState);
 		return true;
+	}
+	
+	/**
+	 * Return pending revisions from all projects
+	 * @return
+	 */
+	public List<ProjectUpdates> getPendingUpdates()	{
+		ArrayList<ProjectUpdates> revisions = new ArrayList<ProjectUpdates>();
+		
+		List<MRevision> projects = POFactory.getList(Env.getCtx(), MRevision.class);
+		for (MRevision r:projects)	{						
+			List<Revision> projectRevisions =  downloader.getRevisions(r.getProject_ID(),r.getRevision());
+			
+			if (projectRevisions.size() > 0)	{
+				ProjectUpdates updates = new ProjectUpdates();
+				updates.setProject(r);
+				updates.setRevisions(projectRevisions);
+				revisions.add(updates);
+			}
+		}
+		
+		return revisions;
+	}
+	
+	public String getServerDescription()	{
+		return downloader.getServiceConnectionHandler().getServiceConnection().getUrl();
 	}
 	
 }

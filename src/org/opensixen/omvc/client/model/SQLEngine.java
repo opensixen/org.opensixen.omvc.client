@@ -16,7 +16,6 @@ import org.compiere.util.CLogger;
 import org.compiere.util.CPreparedStatement;
 import org.compiere.util.CStatementVO;
 import org.compiere.util.DB;
-import org.compiere.util.Trx;
 import org.opensixen.dev.omvc.model.Script;
 import org.opensixen.omvc.client.interfaces.IEngine;
 import org.w3c.dom.Document;
@@ -28,45 +27,39 @@ public class SQLEngine implements IEngine{
 	
 	private CLogger log = CLogger.getCLogger(getClass());
 
-	@Override
-	public boolean run(Script script) throws ScriptException {
-		ArrayList<String> querys = getQueryes(script);
-		String trxName = Trx.createTrxName();
-		log.info("Running script_ID: " + script.getScript_ID());
+	/**
+	 * 
+	 * Run the updates
+	 * @Override
+	 */	
+	public boolean run(Script script, String trxName) throws ScriptException {
+		ArrayList<String> querys = getQueries(script);
+		log.info("Running script_ID: " + script.getScript_ID() + " type: " + script.getType());
 		for (String sql:querys)	{
-			if (executeUpdate(sql, trxName) == -1)	{
+			
+			try {
+				executeUpdate(sql, trxName);
+			}
+			catch (SQLException e)	{
 				try { 
 					DB.rollback(true, trxName);
-				} catch (SQLException e) {
-					throw new ScriptException(e);					
+				} catch (SQLException ex) {
+					throw new ScriptException(ex);					
 				}
-				throw new ScriptException("No se puede ejecutar la consulta: " + sql);
-			}
+				throw new ScriptException("No se puede ejecutar la consulta del script: + " + script.getName() + "[" + script.getScript_ID()+"].", e);
+			}			
 		}
-			
-		try {
-			DB.commit(true, trxName);
-		} catch (Exception e) {			
-			throw new ScriptException(e);	
-		} 
-		return true;
 		
-		
+		return true;	
 	}
 	
-	private int executeUpdate(String sql, String trxName)	{
-		
+	private int executeUpdate(String sql, String trxName) throws SQLException	{		
 		CPreparedStatement psmt = newCPreparedStatement(sql, trxName);
-		try {
-			int num = psmt.executeUpdate();
-			psmt.close();
-			psmt = null;
-			return num;
-		}
-		catch (SQLException e) {	
-			e.printStackTrace();
-			return -1;
-		}				
+		int num = psmt.executeUpdate();
+		psmt.close();
+		psmt = null;
+		return num;
+
 	}
 	
 	
@@ -81,7 +74,7 @@ public class SQLEngine implements IEngine{
 	public static CPreparedStatement newCPreparedStatement(String sql, String trxName) {
 		
 		CStatementVO statement = new CStatementVO(ResultSet.TYPE_FORWARD_ONLY,	ResultSet.CONCUR_UPDATABLE, sql);
-		
+		statement.setTrxName(trxName);
 		return (CPreparedStatement)Proxy.newProxyInstance(CPreparedStatement.class.getClassLoader(), 
 				new Class[]{CPreparedStatement.class},	new PreparedStatementProxy(statement));
 	}
@@ -104,10 +97,50 @@ public class SQLEngine implements IEngine{
 		return engines;
 	}
 
-	private ArrayList<String> getQueryes(Script script)	{
-		ArrayList<String> queryes = new ArrayList<String>();
+	/**
+	 * Return the SQL queries
+	 * @param script
+	 * @return
+	 */
+	private ArrayList<String> getQueries(Script script)	{
+		if (Script.TYPE_OSX.equals(script.getType()))	{
+			return getOSXQueries(script);
+		}
+		else if (Script.TYPE_SQL.equals(script.getType()))	{
+			return getSQLQueries(script);
+		}
+		throw new RuntimeException("Unknown type: " + script.getType());
+	}
+	
+	/**
+	 * Return raw sql as script
+	 * @param script
+	 * @return
+	 */
+	private ArrayList<String> getSQLQueries(Script script)	{
+		ArrayList<String> queries = new ArrayList<String>();
 		
-		String xml = getScriptXML(script.getScript());
+		String sql = script.getScript();
+		
+		if (sql == null || sql.length() == 0)	{
+			// Return empty array
+			return queries;
+		}
+		//QueryExtractor.getQueries(script.getScript());
+		
+		queries.add(script.getScript());
+		return queries;
+	}
+	
+	/**
+	 * Process xml script and return each query
+	 * @param script
+	 * @return
+	 */
+	private ArrayList<String> getOSXQueries(Script script)	{
+		ArrayList<String> queries = new ArrayList<String>();
+		
+		String xml = formatScriptXML(script.getScript());
 		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 		
 		
@@ -123,7 +156,7 @@ public class SQLEngine implements IEngine{
 				
 				for (int x=0; x < nodes.getLength(); x++)	{
 					Node node = nodes.item(x);
-					String value = node.getNodeValue().trim(); //node.getNextSibling().getNodeValue().trim();
+					String value = node.getNodeValue().trim();
 					if (value != null && value.length() != 0)	{
 						buff.append(value);
 					}
@@ -134,7 +167,7 @@ public class SQLEngine implements IEngine{
 				}
 				// Limpiamos caracteres extraños
 				query = query.replaceAll("\n", "");
-				queryes.add(query);
+				queries.add(query);
 							
 			}
 
@@ -148,10 +181,11 @@ public class SQLEngine implements IEngine{
 			e.printStackTrace();
 		}
 
-		return queryes;
+		return queries;
 	}
 	
-	private String getScriptXML(String script)	{
+	
+	private String formatScriptXML(String script)	{
 		StringBuffer buff = new StringBuffer("<scriptCollection>");		
 		
 		script = script.replaceAll("<script>", "<script><![CDATA[");

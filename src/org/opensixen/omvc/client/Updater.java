@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
+import org.compiere.util.Trx;
 import org.opensixen.dev.omvc.model.Revision;
 import org.opensixen.dev.omvc.model.Script;
 import org.opensixen.model.MRevision;
 import org.opensixen.model.POFactory;
 import org.opensixen.omvc.client.model.SQLEngine;
+import org.opensixen.omvc.client.model.ScriptException;
 import org.opensixen.omvc.client.proxy.RevisionDownloaderProxy;
 
 public class Updater {
@@ -24,11 +27,11 @@ public class Updater {
 	}
 	
 	
-	public boolean update()	{	
+	public boolean update() throws ScriptException {	
 		return update(getPendingUpdates());
 	}
 	
-	public boolean update(List<ProjectUpdates> updates)	{
+	public boolean update(List<ProjectUpdates> updates)	throws ScriptException {
 		
 		// Guardamos el estado de migrationScriptState y lo cambiamos a false
 		// para que no guarde las actualizaciones en el migration script.
@@ -53,19 +56,27 @@ public class Updater {
 			
 			for (Revision rev:revisions)	{				
 				log.info("Running revision_ID " + rev.getRevision_ID() + ": " + rev.getDescription());
-				
+				String trxName = Trx.createTrxName();
 				// Get scripts from server
 				List<Script> scripts = downloader.getScripts(rev, engine.getAvailableEngines());
 				for (Script script: scripts)	{
 					
 					// Try to run engine
-					if (!engine.run(script))	{
+					if (!engine.run(script, trxName))	{
 						return false;
-					}
-					// Actualizamos el proyecto a la revision descargada.
-					project.setRevision(rev.getRevision_ID());
-					project.save();
-				}				
+					}					
+				}
+				
+				// Actualizamos el proyecto a la revision descargada.
+				project.setRevision(rev.getRevision_ID());
+				project.save(trxName);
+				
+				try {
+					DB.commit(true, trxName);
+				} catch (Exception e) {			
+					throw new ScriptException(e);	
+				} 
+				
 			}
 		}
 		

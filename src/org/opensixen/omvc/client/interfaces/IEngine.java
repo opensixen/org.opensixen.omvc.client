@@ -8,7 +8,7 @@ public interface IEngine extends IService {
 
 	public String[] getAvailableEngines();
 	
-	public boolean run(Script script) throws ScriptException;
+	public boolean run(Script script, String trxName) throws ScriptException;
 	
 	public Object getResult();
 }

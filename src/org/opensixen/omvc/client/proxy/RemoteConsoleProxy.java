@@ -45,14 +45,24 @@ public class RemoteConsoleProxy extends AbstractProxy<IRemoteConsole> {
 	}
 	
 	/**
-	 * @param clazz
+	 * Private constructor
+	 * use getInstance();
 	 */
-	protected RemoteConsoleProxy() {
+	private RemoteConsoleProxy() {
 		super();
-		console = getService();
-		
 	}
 	
+	
+	
+	
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.client.proxy.AbstractProxy#afterRegister()
+	 */
+	@Override
+	protected void afterRegister() {
+		console = getService();
+	}
+
 	/* (non-Javadoc)
 	 * @see org.opensixen.riena.client.proxy.AbstractProxy#getServicePath()
 	 */

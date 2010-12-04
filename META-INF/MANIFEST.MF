@@ -16,8 +16,9 @@ Require-Bundle: org.eclipse.riena.communication.core;bundle-version="2.0.0",
  org.opensixen.client;bundle-version="1.0.0",
  org.opensixen.riena;bundle-version="1.0.0",
  org.eclipse.equinox.security;bundle-version="1.0.200",
- org.eclipse.riena.security.common;bundle-version="2.0.0"
-Export-Package: org.opensixen.model;x-friends:="org.opensixen.dev.omvc-gui",
+ org.eclipse.riena.security.common;bundle-version="2.0.0",
+ org.opensixen.libs;bundle-version="1.0.0"
+Export-Package: org.opensixen.model;x-friends:="org.opensixen.dev.omvc-gui,org.opensixen.omvc.client.dev",
  org.opensixen.omvc.client,
  org.opensixen.omvc.client.interfaces,
  org.opensixen.omvc.client.model,

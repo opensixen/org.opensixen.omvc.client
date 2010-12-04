@@ -8,6 +8,7 @@ import org.eclipse.riena.communication.core.factory.Register;
 import org.eclipse.riena.security.common.authentication.IAuthenticationService;
 import org.opensixen.riena.Activator;
 import org.opensixen.riena.client.proxy.AbstractProxy;
+import org.opensixen.riena.interfaces.IConnectionChangeListener;
 import org.opensixen.riena.interfaces.IServiceConnectionHandler;
 
 /**
@@ -17,29 +18,47 @@ import org.opensixen.riena.interfaces.IServiceConnectionHandler;
  * Indeos Consultoria http://www.indeos.es
  *
  */
-public class OMVCAuthServiceProxy {
+public class OMVCAuthServiceProxy implements IConnectionChangeListener {
 	
-	private static boolean registered = false;
-	private static IServiceConnectionHandler serviceConnectionHandler;
-	private static IRemoteServiceRegistration serviceRegistration;
+	private boolean registered = false;
+	private IServiceConnectionHandler serviceConnectionHandler;
+	private IRemoteServiceRegistration serviceRegistration;
 	
+	private static OMVCAuthServiceProxy instance;
+	
+	public static OMVCAuthServiceProxy getInstance()	{
+		if (instance == null)	{
+			instance = new OMVCAuthServiceProxy();
+		}
+		return instance;
+	}
+	
+	
+	/**
+	 * Private construnctor
+	 * see getUInstance
+	 */
+	private OMVCAuthServiceProxy()	{
+		
+	}
 	
 	/**
 	 * @return the serviceConnectionHandler
 	 */
-	public static IServiceConnectionHandler getServiceConnectionHandler() {
+	public IServiceConnectionHandler getServiceConnectionHandler() {
 		return serviceConnectionHandler;
 	}
 
 	/**
 	 * @param serviceConnectionHandler the serviceConnectionHandler to set
 	 */
-	public static void setServiceConnectionHandler(
+	public void setServiceConnectionHandler(
 			IServiceConnectionHandler aServiceConnectionHandler) {
 		serviceConnectionHandler = aServiceConnectionHandler;
+		serviceConnectionHandler.addConnectionChangeListener(this);
 	}
 	
-	public static boolean register()	{
+	public boolean register()	{
 		if (registered)	{
 			return true;
 		}
@@ -53,12 +72,22 @@ public class OMVCAuthServiceProxy {
 		
 	}
 	
-	public static void unregister()	{
+	public void unregister()	{
 		if (registered == false || serviceRegistration == null)	{
 			return;
 		}
 		
 		serviceRegistration.unregister();
+	}
+
+
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.interfaces.IConnectionChangeListener#fireConnectionChange()
+	 */
+	@Override
+	public boolean fireConnectionChange() {
+		unregister();
+		return register();
 	}
 	
 

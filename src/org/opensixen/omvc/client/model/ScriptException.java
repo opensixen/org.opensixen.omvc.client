@@ -1,6 +1,6 @@
 package org.opensixen.omvc.client.model;
 
-public class ScriptException extends RuntimeException{
+public class ScriptException extends Exception{
 
 	private static final long serialVersionUID = 1L;
 

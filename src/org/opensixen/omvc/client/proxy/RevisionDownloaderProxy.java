@@ -5,9 +5,7 @@ package org.opensixen.omvc.client.proxy;
 
 import java.net.URL;
 import java.util.List;
-import java.util.logging.Level;
 
-import org.compiere.model.MSysConfig;
 import org.compiere.util.CLogger;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.opensixen.dev.omvc.interfaces.IRevisionDownloader;
@@ -34,10 +32,7 @@ public class RevisionDownloaderProxy extends AbstractProxy<IRevisionDownloader>{
 	private static final String JAAS_CONFIG_FILE = "data/jaas_config.txt"; //$NON-NLS-1$
 	private static final String CONFIG_PREF = "loginConfiguration"; //$NON-NLS-1$
 	private static final String CONFIG_DEFAULT = "omvc"; //$NON-NLS-1$
-	
-	
-	
-	
+			
 	public synchronized static RevisionDownloaderProxy getInstance()	{
 		if (instance == null)	{
 			instance = new RevisionDownloaderProxy();			
@@ -48,12 +43,23 @@ public class RevisionDownloaderProxy extends AbstractProxy<IRevisionDownloader>{
 	
 	
 	/**
-	 * @param clazz
+	 * Private constructor
+	 * use getInstance();
 	 */
-	protected RevisionDownloaderProxy() {
-		super();
+	private RevisionDownloaderProxy() {
+		super();		
+	}
+
+	
+	
+	/* (non-Javadoc)
+	 * @see org.opensixen.riena.client.proxy.AbstractProxy#afterRegister()
+	 */
+	@Override
+	protected void afterRegister() {
 		downloader = getService();
 	}
+
 
 	/* (non-Javadoc)
 	 * @see org.opensixen.riena.client.proxy.AbstractProxy#getServicePath()
@@ -118,8 +124,5 @@ public class RevisionDownloaderProxy extends AbstractProxy<IRevisionDownloader>{
 	 */
 	public List<Script> getScripts(Revision revision, String[] engines) {
 		return downloader.getScripts(revision, engines);
-	}
-
-
-	
+	}	
 }
